@@ -24,7 +24,15 @@
     </dependency>
   </dependencies>
 
-  <build>
+<build>
     <finalName>home-products</finalName>
+    <plugins>
+      <!-- Adding the modern WAR plugin compatible with Java 17 -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>3.4.0</version>
+      </plugin>
+    </plugins>
   </build>
 </project>
