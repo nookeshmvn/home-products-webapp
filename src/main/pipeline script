@@ -1,0 +1,56 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('1. Checkout Code') {
+            steps {
+                // Pulls the latest code from your main branch
+                git branch: 'main', url: 'https://github.com/nookeshmvn/home-products-webapp.git'
+            }
+        }
+        
+        stage('2. Build with Maven') {
+            steps {
+                // Compiles the Java code and creates the target/home-products.war file
+                sh 'mvn clean package'
+            }
+        }
+        
+        stage('3. SonarQube Analysis') {
+            steps {
+                // Uses the 'sonar-server' connection you created in Phase 2
+                withSonarQubeEnv('sonar-server') {
+                    sh 'mvn sonar:sonar'
+                }
+            }
+        }
+        
+        stage('4. Upload Artifact to Nexus') {
+            steps {
+                // Uploads the final .war file into your Nexus repository for safe storage
+                nexusArtifactUploader(
+                    nexusVersion: 'nexus3',
+                    protocol: 'http',
+                    nexusUrl: 'YOUR_NEXUS_IP:8081', // <-- CHANGE THIS!
+                    groupId: 'com.homeproducts',
+                    version: '1.0.0',
+                    repository: 'maven-releases',
+                    credentialsId: 'nexus-creds',
+                    artifacts: [
+                        [artifactId: 'home-products',
+                         classifier: '',
+                         file: 'target/home-products.war',
+                         type: 'war']
+                    ]
+                )
+            }
+        }
+        
+        stage('5. Deploy to Tomcat') {
+            steps {
+                // Pushes the code to your live Tomcat web server
+                deploy adapters: [tomcat9(credentialsId: 'tomcat-creds', path: '', url: 'http://YOUR_TOMCAT_IP:8080')], contextPath: '/home-products', war: 'target/home-products.war' // <-- CHANGE THIS IP!
+            }
+        }
+    }
+}
